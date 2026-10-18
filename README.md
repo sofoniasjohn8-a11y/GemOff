@@ -49,7 +49,7 @@ adb push gemma-3-1b.task /data/local/tmp/llm/gemma.task
 
 ## Building
 
-Requirements: **Android Studio Ladybug+**, JDK 17 (bundled with Studio),
+Requirements: **Android Studio Ladybug+**, **JDK 17 to 25** (the Gradle/AGP toolchain runs fine on JDK 25; Studio's bundled JDK also works),
 an arm64 device or emulator with at least 4 GB RAM (MediaPipe GenAI targets
 high-end devices such as Pixel 8 / Galaxy S23 class; emulators are unreliable).
 
