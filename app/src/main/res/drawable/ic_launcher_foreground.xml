@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Faceted gem -->
+    <group android:translateX="24" android:translateY="27">
+        <path
+            android:fillColor="#B69CFF"
+            android:pathData="M30,0 L54,22 L30,54 L6,22 Z" />
+        <path
+            android:fillColor="#D6C7FF"
+            android:pathData="M30,0 L54,22 L30,22 Z" />
+        <path
+            android:fillColor="#8F6FFF"
+            android:pathData="M30,0 L30,22 L6,22 Z" />
+        <path
+            android:fillColor="#6E56E0"
+            android:pathData="M30,22 L54,22 L30,54 Z" />
+        <path
+            android:fillColor="#A88BFF"
+            android:pathData="M30,22 L30,54 L6,22 Z" />
+    </group>
+</vector>
