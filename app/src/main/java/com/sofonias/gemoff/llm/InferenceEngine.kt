@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession
 import com.google.mediapipe.tasks.genai.llminference.ProgressListener
+import java.util.concurrent.Future
 
 /**
  * Thin wrapper around the MediaPipe LLM Inference task.
@@ -16,6 +17,10 @@ class InferenceEngine private constructor(context: Context, modelPath: String) {
 
     private val llm: LlmInference
     private var session: LlmInferenceSession
+    private var activeFuture: Future<*>? = null
+    @Volatile
+    private var needsSessionReset = false
+    private val engineLock = Any()
 
     init {
         llm = LlmInference.createFromOptions(
@@ -39,38 +44,103 @@ class InferenceEngine private constructor(context: Context, modelPath: String) {
                 .build()
         )
 
-    /** Drops the conversation context and starts a fresh session. */
-    fun resetSession() {
+    /** Instantly flags the session to reset on the next prompt, without blocking the caller thread. */
+    fun stopAndMarkReset() {
         try {
-            session.close()
+            activeFuture?.cancel(true)
         } catch (_: Exception) {
         }
-        session = newSession()
+        activeFuture = null
+        needsSessionReset = true
+    }
+
+    fun resetSession() {
+        stopAndMarkReset()
+    }
+
+    private fun performSessionResetIfNeeded() {
+        if (needsSessionReset) {
+            try {
+                session.close()
+            } catch (_: Exception) {
+            }
+            try {
+                session = newSession()
+            } catch (_: Exception) {
+            }
+            needsSessionReset = false
+        }
     }
 
     /**
      * Streams a response for [prompt]. [onPartial] is invoked on a
-     * background thread with each new chunk of text; call site must
-     * take care of thread-safe state updates.
+     * background thread with each new chunk of text.
      */
     fun generateResponseAsync(
         prompt: String,
         onPartial: (chunk: String, done: Boolean) -> Unit
     ) {
-        session.addQueryChunk(prompt)
-        session.generateResponseAsync(
-            ProgressListener { chunk, done -> onPartial(chunk, done) }
-        ).get() // Future completes when done=true, or throws on failure.
+        synchronized(engineLock) {
+            performSessionResetIfNeeded()
+            try {
+                session.addQueryChunk(prompt)
+                val future = session.generateResponseAsync(
+                    ProgressListener { chunk, done -> onPartial(chunk, done) }
+                )
+                activeFuture = future
+                try {
+                    future.get()
+                } finally {
+                    activeFuture = null
+                }
+            } catch (e: Exception) {
+                activeFuture = null
+                if (e.message?.contains("Previous invocation still processing", ignoreCase = true) == true) {
+                    // C++ engine was busy - reset session and retry once cleanly
+                    try {
+                        session.close()
+                    } catch (_: Exception) {
+                    }
+                    try {
+                        session = newSession()
+                        session.addQueryChunk(prompt)
+                        val retryFuture = session.generateResponseAsync(
+                            ProgressListener { chunk, done -> onPartial(chunk, done) }
+                        )
+                        activeFuture = retryFuture
+                        try {
+                            retryFuture.get()
+                        } finally {
+                            activeFuture = null
+                        }
+                    } catch (retryException: Exception) {
+                        activeFuture = null
+                        throw retryException
+                    }
+                } else {
+                    throw e
+                }
+            }
+        }
     }
 
     fun close() {
-        try {
-            session.close()
-        } catch (_: Exception) {
-        }
-        try {
-            llm.close()
-        } catch (_: Exception) {
+        synchronized(engineLock) {
+            try {
+                activeFuture?.cancel(true)
+            } catch (_: Exception) {
+            }
+            activeFuture = null
+
+            try {
+                session.close()
+            } catch (_: Exception) {
+            }
+
+            try {
+                llm.close()
+            } catch (_: Exception) {
+            }
         }
     }
 
