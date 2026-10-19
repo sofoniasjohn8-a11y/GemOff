@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="360"
+    android:viewportHeight="800">
+    <!-- Subtle background accent circles/glow -->
+    <path
+        android:pathData="M180,100 m-120,0 a120,120 0 1,0 240,0 a120,120 0 1,0 -240,0"
+        android:fillColor="#188F6FFF" />
+    <path
+        android:pathData="M280,500 m-150,0 a150,150 0 1,0 300,0 a150,150 0 1,0 -300,0"
+        android:fillColor="#128F6FFF" />
+    <path
+        android:pathData="M60,680 m-100,0 a100,100 0 1,0 200,0 a100,100 0 1,0 -200,0"
+        android:fillColor="#158F6FFF" />
+
+    <!-- Delicate geometric grid lines for AI aesthetic -->
+    <path
+        android:pathData="M0,120 L360,120 M0,280 L360,280 M0,440 L360,440 M0,600 L360,600 M0,760 L360,760"
+        android:strokeWidth="0.5"
+        android:strokeColor="#108F6FFF" />
+    <path
+        android:pathData="M72,0 L72,800 M144,0 L144,800 M216,0 L216,800 M288,0 L288,800"
+        android:strokeWidth="0.5"
+        android:strokeColor="#108F6FFF" />
+</vector>
